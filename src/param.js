@@ -87,8 +87,6 @@ const objectSanitizer = function ({ defError }) {
         // console.log(`Processing ${prop} : ${obj[ prop ]}`)
         if (value.hasOwnProperty(prop) && obj.hasOwnProperty(prop)) {
           converted[ prop ] = obj[ prop ](value[ prop ], errorObject)
-        } else {
-          converted[ prop ] = value[ prop ]
         }
       }
       return converted

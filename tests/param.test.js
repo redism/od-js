@@ -1,6 +1,5 @@
-import { sanitizer as Sanitizer } from '../../overdosed-node-lib/src/param'
+import { sanitizer as Sanitizer } from '../src/param'
 import _ from 'lodash'
-import moment from 'moment'
 
 describe('sanitizer with high-order function', () => {
   const defError = ({ value }) => `Invalid param : ${value} / [${typeof value}]`
