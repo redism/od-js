@@ -193,4 +193,19 @@ describe('sanitizer with high-order function', () => {
     const s = sanitizer.dateTime()
     expect(() => s(new Date())).not.toThrow()
   })
+
+  it('toString', () => {
+    const s = sanitizer.toString()
+    expect(s(1)).toEqual('1')
+  })
+
+  it('trim', () => {
+    const s = sanitizer.trim()
+    expect(s(' 4 ')).toEqual('4')
+  })
+
+  it('toString and trim', () => {
+    const s = sanitizer.chain(sanitizer.toString(), sanitizer.trim())
+    expect(s(' 5931a ')).toEqual('5931a')
+  })
 })

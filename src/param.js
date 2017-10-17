@@ -258,6 +258,8 @@ const parsePositiveInt = function ({ defError }) {
 }
 
 function createSanitizedObject (options) {
+  const passer = pass(options)
+
   const s = {
     object: objectSanitizer(options),
     chain: chainSanitizer(options),
@@ -274,6 +276,8 @@ function createSanitizedObject (options) {
     exactly: exactly(options),
     just: just(options),
     pass: pass(options),
+    toString: () => passer(v => v.toString()),
+    trim: () => passer(v => v.toString().trim()),
   }
 
   s.builder = () => {
