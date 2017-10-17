@@ -71,7 +71,7 @@ const isLazySanitizer = fn => {
 }
 
 const objectSanitizer = function ({ defError }) {
-  return (objSrc, { error = defError } = {}) => {
+  return (objSrc, { error = defError, after = (v => v) } = {}) => {
     const obj = ld.clone(objSrc)
     ensure(ld.isObject(obj), 'Invalid usage of sanitizer.object')
     const defaultValue = {}
@@ -102,7 +102,7 @@ const objectSanitizer = function ({ defError }) {
         }
       }
       lazyFields.forEach(({ prop, mapper }) => { converted[ prop ] = mapper(converted) })
-      return converted
+      return after(converted)
     })
   }
 }
