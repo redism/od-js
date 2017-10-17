@@ -208,4 +208,10 @@ describe('sanitizer with high-order function', () => {
     const s = sanitizer.chain(sanitizer.toString(), sanitizer.trim())
     expect(s(' 5931a ')).toEqual('5931a')
   })
+
+  it('ensure', () => {
+    const s = sanitizer.ensure(v => _.isString(v))
+    expect(s('123')).toEqual('123')
+    expect(() => s(123)).toThrow()
+  })
 })

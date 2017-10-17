@@ -250,6 +250,17 @@ const exactly = ({ defError }) => (val, { error = defError } = {}) => {
   })
 }
 
+const ensureSanitizer = ({ defError }) => (checker, { error = defError } = {}) => {
+  return wrap(value => {
+    try {
+      ensure(checker(value), error, { value })
+    } catch (ex) {
+      ensure(false, error, { value })
+    }
+    return value
+  })
+}
+
 const pass = () => (mapper = v => v) => {
   return wrap(v => mapper(v))
 }
@@ -292,6 +303,7 @@ function createSanitizedObject (options) {
     parsePositiveInt: parsePositiveInt(options),
     exactly: exactly(options),
     just: just(options),
+    ensure: ensureSanitizer(options),
     pass: pass(options),
     fileList: fileList(options),
     toString: () => passer(v => v.toString()),
