@@ -1,6 +1,6 @@
-import { sanitizer } from './param'
+import { sanitizer, ensure } from './param'
 
-// TODO: export right from import
 module.exports = {
+  ensure: ensure,
   sanitizer: sanitizer,
 }
