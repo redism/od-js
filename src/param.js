@@ -263,13 +263,13 @@ const parsePositiveInt = function ({ defError }) {
 /**
  * Parse FileList[] which can be get from Input of type "file".
  */
-const file = ({ defError }) => ({ required = false, error = defError, defaultValue = undefined } = {}) => {
+const fileList = ({ defError }) => ({ required = false, error = defError, defaultValue = undefined } = {}) => {
   return wrap(value => {
     if (!value) {
       ensure(!required, error, { value })
       return defaultValue
     }
-    ensure(value[ 0 ], error, { value }) // FileList object looks like array but it doesn't..l
+    ensure(ld.isObject(value) && value[ 0 ], error, { value }) // FileList object looks like array but it doesn't..l
     return value[ 0 ]
   })
 }
@@ -293,7 +293,7 @@ function createSanitizedObject (options) {
     exactly: exactly(options),
     just: just(options),
     pass: pass(options),
-    file: file(options),
+    fileList: fileList(options),
     toString: () => passer(v => v.toString()),
     trim: () => passer(v => v.toString().trim()),
   }
