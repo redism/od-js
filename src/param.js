@@ -51,12 +51,13 @@ ensure.nonEmptyString = ensureNonEmptyString
 ensure.bool = ensureBool
 
 const signature = 'od.sanitizer'
-const wrap = (funcSanitize, name = '') => {
+const wrap = (funcSanitize, name = '', options = {}) => {
   if (name) {
     funcSanitize._sanitizer = [ signature, name ].join('.')
   } else {
     funcSanitize._sanitizer = signature
   }
+  funcSanitize._sanitizerOptions = options
   return funcSanitize
 }
 const isSanitizer = fn => {
@@ -65,20 +66,31 @@ const isSanitizer = fn => {
 const isJustSanitizer = fn => {
   return isSanitizer(fn) && fn._sanitizer.endsWith('just')
 }
+const isLazySanitizer = fn => {
+  return isSanitizer(fn) && fn._sanitizer.endsWith('lazy')
+}
 
 const objectSanitizer = function ({ defError }) {
-  return (obj, { error = defError } = {}) => {
+  return (objSrc, { error = defError } = {}) => {
+    const obj = ld.clone(objSrc)
     ensure(ld.isObject(obj), 'Invalid usage of sanitizer.object')
     const defaultValue = {}
+    const _lazyFields = []
 
     for (let prop in obj) {
       if (obj.hasOwnProperty(prop)) {
         ensure(isSanitizer(obj[ prop ]), `Invalid usage of sanitizer.object, [${prop}] is not a sanitizer`)
         if (isJustSanitizer(obj[ prop ])) {
           defaultValue[ prop ] = obj[ prop ]()
+        } else if (isLazySanitizer(obj[ prop ])) {
+          const lazySanitizerOptions = obj[ prop ]._sanitizerOptions
+          _lazyFields.push({ mapper: obj[ prop ], prop, options: lazySanitizerOptions })
+          delete obj[ prop ]
         }
       }
     }
+
+    const lazyFields = ld.sortBy(_lazyFields, ({ options: { priority } }) => -priority)
 
     return wrap(value => {
       let converted = ld.cloneDeep(defaultValue)
@@ -89,6 +101,7 @@ const objectSanitizer = function ({ defError }) {
           converted[ prop ] = obj[ prop ](value[ prop ], error)
         }
       }
+      lazyFields.forEach(({ prop, mapper }) => { converted[ prop ] = mapper(converted) })
       return converted
     })
   }
@@ -285,6 +298,13 @@ const fileList = ({ defError }) => ({ required = false, error = defError, defaul
   })
 }
 
+/**
+ * Used exclusively on sanitizer.object(). Field is evaluated after other fields of higher priorities are evaluated.
+ */
+const lazy = ({ defError }) => (mapper, { priority = 10, error = defError } = {}) => {
+  return wrap(value => mapper(value), 'lazy', { priority })
+}
+
 function createSanitizedObject (options) {
   const passer = pass(options)
 
@@ -306,6 +326,7 @@ function createSanitizedObject (options) {
     ensure: ensureSanitizer(options),
     pass: pass(options),
     fileList: fileList(options),
+    lazy: lazy(options),
     toString: () => passer(v => v.toString()),
     trim: () => passer(v => v.toString().trim()),
   }

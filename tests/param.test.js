@@ -214,4 +214,15 @@ describe('sanitizer with high-order function', () => {
     expect(s('123')).toEqual('123')
     expect(() => s(123)).toThrow()
   })
+
+  it('object /w lazy option', () => {
+    const s = sanitizer.object({
+      v1: sanitizer.parseInt(),
+      v2: sanitizer.parseInt(),
+      sum: sanitizer.lazy(obj => obj.v1 + obj.v2, { priority: 10 }),
+      sum2: sanitizer.lazy(obj => obj.v1 + obj.v2 + obj.sum, { priority: 5 })
+    })
+
+    expect(s({ v1: 10, v2: '20' })).toEqual({ v1: 10, v2: 20, sum: 30, sum2: 60 })
+  })
 })
