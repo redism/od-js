@@ -5,13 +5,13 @@ describe('sanitizer with high-order function', () => {
   const defError = ({ value }) => `Invalid param : ${value} / [${typeof value}]`
   const sanitizer = Sanitizer({ defError: defError })
 
-  const linkTester = sanitizer.linkString(({ value }) => `Invalid link : ${value}`)
-  const binaryToBoolTester = sanitizer.binaryNumberToBool(({ value }) => `Invalid value : ${value}`)
-  const infToNull = sanitizer.mapExact('inf', null, defError)
-  const positiveIntChecker = sanitizer.positiveInt(defError)
+  const linkTester = sanitizer.linkString({ error: ({ value }) => `Invalid link : ${value}` })
+  const binaryToBoolTester = sanitizer.binaryNumberToBool({ error: ({ value }) => `Invalid value : ${value}` })
+  const infToNull = sanitizer.mapExact('inf', null, { error: defError })
+  const positiveIntChecker = sanitizer.positiveInt({ error: defError })
 
   const eitherFalseOrValidLink = sanitizer.anyOf(
-    linkTester, binaryToBoolTester, ({ value }) => `Invalid link setting : ${value}`
+    linkTester, binaryToBoolTester, { error: ({ value }) => `Invalid link setting : ${value}` },
   )
 
   const validLink = 'http://www.google.com'
@@ -41,7 +41,7 @@ describe('sanitizer with high-order function', () => {
     const parseAndCheckPositive = sanitizer.chain(
       sanitizer.parseInt(),
       sanitizer.positiveInt(),
-      defError
+      { error: defError },
     )
 
     expect(parseAndCheckPositive('12')).toEqual(12)
@@ -61,7 +61,7 @@ describe('sanitizer with high-order function', () => {
   it('chain with custom error', () => {
     const parseAndCheckPositive = sanitizer.chain(
       sanitizer.parseInt(),
-      sanitizer.positiveInt(({ value }) => 'Nah..'),
+      sanitizer.positiveInt({ error: ({ value }) => 'Nah..' }),
     )
 
     expect(() => parseAndCheckPositive('-123')).toThrow('Nah..')
@@ -77,7 +77,7 @@ describe('sanitizer with high-order function', () => {
 
   it('object', () => {
     const objectSanitizer = sanitizer.object({
-      name: sanitizer.nonEmptyString(({ value }) => `Invalid name field : ${value}`),
+      name: sanitizer.nonEmptyString({ error: ({ value }) => `Invalid name field : ${value}` }),
       age: sanitizer.chain(sanitizer.parseInt(), sanitizer.positiveInt()),
     })
 
@@ -112,7 +112,7 @@ describe('sanitizer with high-order function', () => {
 
   it('using builder', () => {
     const objectSanitizer = sanitizer.object({
-      name: sanitizer.builder().nonEmptyString(({ value }) => `Invalid name field : ${value}`).build(),
+      name: sanitizer.builder().nonEmptyString({ error: ({ value }) => `Invalid name field : ${value}` }).build(),
       age: sanitizer.builder().parseInt().positiveInt().build(),
     })
 
@@ -127,7 +127,7 @@ describe('sanitizer with high-order function', () => {
   })
 
   it('builder final error', () => {
-    const s = sanitizer.builder().parseInt().positiveInt().build(({ value }) => `No ${value}`)
+    const s = sanitizer.builder().parseInt().positiveInt().build({ error: ({ value }) => `No ${value}` })
     expect(() => s(-1)).toThrow('No -1')
   })
 
@@ -154,7 +154,7 @@ describe('sanitizer with high-order function', () => {
   })
 
   it('parsePositiveInt', () => {
-    const s = sanitizer.parsePositiveInt(({ value }) => `No.. ${value}`)
+    const s = sanitizer.parsePositiveInt({ error: ({ value }) => `No.. ${value}` })
     expect(() => s(-1)).toThrow('No.. -1')
   })
 

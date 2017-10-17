@@ -67,7 +67,7 @@ const isJustSanitizer = fn => {
 }
 
 const objectSanitizer = function ({ defError }) {
-  return (obj, errorObject = defError) => {
+  return (obj, { error = defError } = {}) => {
     ensure(ld.isObject(obj), 'Invalid usage of sanitizer.object')
     const defaultValue = {}
 
@@ -82,11 +82,11 @@ const objectSanitizer = function ({ defError }) {
 
     return wrap(value => {
       let converted = ld.cloneDeep(defaultValue)
-      ensure(ld.isObject(value), errorObject, { value })
+      ensure(ld.isObject(value), error, { value })
       for (let prop in value) {
         // console.log(`Processing ${prop} : ${obj[ prop ]}`)
         if (value.hasOwnProperty(prop) && obj.hasOwnProperty(prop)) {
-          converted[ prop ] = obj[ prop ](value[ prop ], errorObject)
+          converted[ prop ] = obj[ prop ](value[ prop ], error)
         }
       }
       return converted
@@ -101,16 +101,17 @@ const chainSanitizer = ({ defError }) => (...sanitizers) => {
 
   const last = sanitizers[ sanitizers.length - 1 ]
   let maxIndex = sanitizers.length - 1
-  let errorObject
-  let errorIsNotDefault = false
+  let options = {}
 
   if (isSanitizer(last)) {
     maxIndex++
-    errorObject = defError
-  } else { // assume it's error object
-    errorObject = last
-    errorIsNotDefault = true
+  } else { // assume it's an option.
+    options = last
   }
+
+  options = Object.assign({ error: defError }, options)
+
+  const errorIsNotDefault = options.error !== defError
 
   return wrap(value => {
     let intermediateValue = value
@@ -118,7 +119,7 @@ const chainSanitizer = ({ defError }) => (...sanitizers) => {
       try {
         intermediateValue = sanitizers[ i ](intermediateValue)
       } catch (ex) {
-        const err = errorIsNotDefault ? errorObject || ex._errorObject : ex._errorObject || errorObject
+        const err = errorIsNotDefault ? options.error || ex._errorObject : ex._errorObject || options.error
         ensure(false, err, { value })
       }
     }
@@ -133,13 +134,14 @@ const anyOfSanitizer = ({ defError }) => (...sanitizers) => {
 
   const last = sanitizers[ sanitizers.length - 1 ]
   let maxIndex = sanitizers.length - 1
-  let errorObject
+  let options = {}
   if (isSanitizer(last)) {
     maxIndex++
-    errorObject = defError
-  } else { // assume it's error object
-    errorObject = last
+  } else { // assume it's an option.
+    options = last
   }
+
+  options = Object.assign({ error: defError }, options)
 
   return wrap(value => {
     for (let i = 0; i < maxIndex; i++) {
@@ -148,7 +150,7 @@ const anyOfSanitizer = ({ defError }) => (...sanitizers) => {
       } catch (ex) {
       }
     }
-    ensure(false, errorObject, { value })
+    ensure(false, options.error, { value })
   })
 }
 
@@ -156,48 +158,49 @@ const parseIntSanitizer = () => () => {
   return wrap(value => parseInt(value, 10))
 }
 
-const positiveIntSanitizer = ({ defError }) => (errorObject = defError) => {
+const positiveIntSanitizer = ({ defError }) => ({ error = defError } = {}) => {
   return wrap(value => {
-    ensure(ld.isInteger(value), errorObject, { value })
-    ensure(value >= 0, errorObject, { value })
+    ensure(ld.isInteger(value), error, { value })
+    ensure(value >= 0, error, { value })
     return value
   })
 }
 
-const nonEmptyStringSanitizer = ({ defError }) => (errorObject = defError) => {
+const nonEmptyStringSanitizer = ({ defError }) => ({ error = defError } = {}) => {
   return wrap(value => {
-    ensure.nonEmptyString(value, errorObject, { value })
+    ensure.nonEmptyString(value, error, { value })
     return value
   })
 }
 
-const mapExactSanitizer = ({ defError }) => (valueToCheck, valueToRet, errorObject = defError) => {
+const mapExactSanitizer = ({ defError }) => (valueToCheck, valueToRet, { error = defError } = {}) => {
   return wrap(value => {
-    ensure(value === valueToCheck, errorObject, { value })
+    ensure(value === valueToCheck, error, { value })
     return valueToRet
   })
 }
 
-const binaryNumberToBoolSanitizer = ({ defError }) => (errorObject = defError) => {
+const binaryNumberToBoolSanitizer = ({ defError }) => ({ error = defError } = {}) => {
   return wrap(value => {
     const i = parseInt(value, 10)
-    ensure.oneOf(i, [ 0, 1 ], errorObject, { value })
+    ensure.oneOf(i, [ 0, 1 ], error, { value })
     return i === 1
   })
 }
 
-const linkStringSanitizer = ({ defError }) => (errorObject = defError) => {
+const linkStringSanitizer = ({ defError }) => ({ error = defError } = {}) => {
   return wrap(value => {
     const val = value.trim()
-    ensureNonEmptyString(val, errorObject, { value })
-    ensure(val.toLowerCase().startsWith('http'), errorObject, { value })
+    ensureNonEmptyString(val, error, { value })
+    ensure(val.toLowerCase().startsWith('http'), error, { value })
     return val
   })
 }
 
-const dateTimeSanitizer = ({ defError }) => (options, errorObject = defError) => {
+const dateTimeSanitizer = ({ defError }) => (options) => {
   options = Object.assign({
-    format: 'YYYY-MM-DD HH:mm:ss'
+    format: 'YYYY-MM-DD HH:mm:ss',
+    error: defError,
   }, options || {})
 
   return wrap(value => {
@@ -210,12 +213,12 @@ const dateTimeSanitizer = ({ defError }) => (options, errorObject = defError) =>
       val = moment(value)
     }
 
-    ensure(val.isValid(), errorObject)
+    ensure(val.isValid(), options.error)
     return val.format(options.format)
   })
 }
 
-const oneOfSanitizer = ({ defError }) => (possibles, options, errorObject = defError) => {
+const oneOfSanitizer = ({ defError }) => (possibles, { error = defError } = {}) => {
   let values
   let mapper
   if (ld.isArray(possibles)) {
@@ -230,7 +233,7 @@ const oneOfSanitizer = ({ defError }) => (possibles, options, errorObject = defE
 
   return wrap(value => {
     const index = values.indexOf(value)
-    ensure(index >= 0, errorObject, { value, possibles })
+    ensure(index >= 0, error, { value, possibles })
     return mapper(index)
   })
 }
@@ -240,9 +243,9 @@ const just = () => (value) => {
   return wrap(getter, 'just')
 }
 
-const exactly = ({ defError }) => (val, errorObject = defError) => {
+const exactly = ({ defError }) => (val, { error = defError } = {}) => {
   return wrap(value => {
-    ensure(val === value, errorObject, { value })
+    ensure(val === value, error, { value })
     return value
   })
 }
@@ -252,9 +255,23 @@ const pass = () => (mapper = v => v) => {
 }
 
 const parsePositiveInt = function ({ defError }) {
-  return function (errorObject = defError) {
-    return this.builder().parseInt().positiveInt().build(errorObject)
+  return function ({ error = defError } = {}) {
+    return this.builder().parseInt().positiveInt().build({ error })
   }
+}
+
+/**
+ * Parse FileList[] which can be get from Input of type "file".
+ */
+const file = ({ defError }) => ({ required = false, error = defError, defaultValue = undefined } = {}) => {
+  return wrap(value => {
+    if (!value) {
+      ensure(!required, error, { value })
+      return defaultValue
+    }
+    ensure(value[ 0 ], error, { value }) // FileList object looks like array but it doesn't..l
+    return value[ 0 ]
+  })
 }
 
 function createSanitizedObject (options) {
@@ -276,6 +293,7 @@ function createSanitizedObject (options) {
     exactly: exactly(options),
     just: just(options),
     pass: pass(options),
+    file: file(options),
     toString: () => passer(v => v.toString()),
     trim: () => passer(v => v.toString().trim()),
   }
@@ -297,9 +315,9 @@ function createSanitizedObject (options) {
         })(san)
       }
     }
-    builder.build = (errorObject) => {
-      if (errorObject) {
-        return s.chain(...list, errorObject)
+    builder.build = ({ error } = {}) => {
+      if (error) {
+        return s.chain(...list, { error })
       }
       return s.chain(...list)
     }
