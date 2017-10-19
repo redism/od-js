@@ -246,4 +246,15 @@ describe('sanitizer with high-order function', () => {
 
     expect(() => s({ age: 10 })).toThrow()
   })
+
+  it('object sanitizer with just function', () => {
+    let i = 0
+    const s = sanitizer.object({
+      counter: sanitizer.just(() => i++)
+    })
+
+    expect(s({})).toEqual({ counter: 0 })
+    expect(s({})).toEqual({ counter: 1 })
+    expect(s({})).toEqual({ counter: 2 })
+  })
 })

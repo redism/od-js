@@ -81,7 +81,7 @@ const objectSanitizer = function ({ defError }) {
       if (obj.hasOwnProperty(prop)) {
         ensure(isSanitizer(obj[ prop ]), `Invalid usage of sanitizer.object, [${prop}] is not a sanitizer`)
         if (isJustSanitizer(obj[ prop ])) {
-          defaultValue[ prop ] = obj[ prop ]()
+          defaultValue[ prop ] = () => obj[ prop ]()
         } else if (isLazySanitizer(obj[ prop ])) {
           const lazySanitizerOptions = obj[ prop ]._sanitizerOptions
           _lazyFields.push({ mapper: obj[ prop ], prop, options: lazySanitizerOptions })
@@ -93,7 +93,13 @@ const objectSanitizer = function ({ defError }) {
     const lazyFields = ld.sortBy(_lazyFields, ({ options: { priority } }) => -priority)
 
     return wrap(value => {
-      let converted = ld.cloneDeep(defaultValue)
+      let converted = {}
+
+      // lazy sanitizer can have a function, so evaluate each time.
+      Object.entries(defaultValue).forEach(([ key, evaluator ]) => {
+        converted[ key ] = evaluator()
+      })
+
       ensure(ld.isObject(value), error, { value, message: 'Given value is not an object.' })
       for (let prop in value) {
         // console.log(`Processing ${prop} : ${obj[ prop ]}`)
