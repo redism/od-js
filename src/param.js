@@ -71,7 +71,7 @@ const isLazySanitizer = fn => {
 }
 
 const objectSanitizer = function ({ defError }) {
-  return (objSrc, { error = defError, after = (v => v) } = {}) => {
+  return (objSrc, { requireAllFields = false, error = defError, after = (v => v) } = {}) => {
     const obj = ld.clone(objSrc)
     ensure(ld.isObject(obj), 'Invalid usage of sanitizer.object')
     const defaultValue = {}
@@ -94,7 +94,7 @@ const objectSanitizer = function ({ defError }) {
 
     return wrap(value => {
       let converted = ld.cloneDeep(defaultValue)
-      ensure(ld.isObject(value), error, { value })
+      ensure(ld.isObject(value), error, { value, message: 'Given value is not an object.' })
       for (let prop in value) {
         // console.log(`Processing ${prop} : ${obj[ prop ]}`)
         if (value.hasOwnProperty(prop) && obj.hasOwnProperty(prop)) {
@@ -102,6 +102,12 @@ const objectSanitizer = function ({ defError }) {
         }
       }
       lazyFields.forEach(({ prop, mapper }) => { converted[ prop ] = mapper(converted) })
+
+      if (requireAllFields) {
+        ensure(Object.keys(converted).length === Object.keys(obj).length,
+          error, { value, message: 'Missing fields exist.' })
+      }
+
       return after(converted)
     })
   }

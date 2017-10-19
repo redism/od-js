@@ -238,4 +238,12 @@ describe('sanitizer with high-order function', () => {
 
     expect(s({ v1: 10, v2: '20' })).toEqual(60)
   })
+
+  it('object /w requireAllFields=true', () => {
+    const s = sanitizer.object({
+      name: sanitizer.nonEmptyString(),
+    }, { requireAllFields: true })
+
+    expect(() => s({ age: 10 })).toThrow()
+  })
 })
