@@ -69,6 +69,10 @@ const isJustSanitizer = fn => {
 const isLazySanitizer = fn => {
   return isSanitizer(fn) && fn._sanitizer.endsWith('lazy')
 }
+export const isObjectSanitizer = fn => {
+  return isSanitizer(fn) && fn._sanitizer.endsWith('object')
+}
+export const getSanitizerOptions = fn => fn._sanitizerOptions
 
 const objectSanitizer = function ({ defError }) {
   return (objSrc, { requireAllFields = false, error = defError, after = (v => v) } = {}) => {
@@ -104,7 +108,11 @@ const objectSanitizer = function ({ defError }) {
       for (let prop in value) {
         // console.log(`Processing ${prop} : ${obj[ prop ]}`)
         if (value.hasOwnProperty(prop) && obj.hasOwnProperty(prop)) {
-          converted[ prop ] = obj[ prop ](value[ prop ], error)
+          try {
+            converted[ prop ] = obj[ prop ](value[ prop ], error)
+          } catch (ex) {
+            ensure(false, error, { value, message: `parameter=${prop}` })
+          }
         }
       }
       lazyFields.forEach(({ prop, mapper }) => { converted[ prop ] = mapper(converted) })
@@ -115,7 +123,7 @@ const objectSanitizer = function ({ defError }) {
       }
 
       return after(converted)
-    })
+    }, 'object', { keys: Object.keys(obj) })
   }
 }
 

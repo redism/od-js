@@ -1,6 +1,8 @@
-import { sanitizer, ensure } from './param'
+import { sanitizer, ensure, isObjectSanitizer, getSanitizerOptions } from './param'
 
 module.exports = {
   ensure: ensure,
   sanitizer: sanitizer,
+  isObjectSanitizer,
+  getSanitizerOptions,
 }
