@@ -60,7 +60,7 @@ const wrap = (funcSanitize, name = '', options = {}) => {
   funcSanitize._sanitizerOptions = options
   return funcSanitize
 }
-const isSanitizer = fn => {
+export const isSanitizer = fn => {
   return ld.isFunction(fn) && fn._sanitizer && fn._sanitizer.startsWith(signature)
 }
 const isJustSanitizer = fn => {
