@@ -85,10 +85,10 @@ describe('sanitizer with high-order function', () => {
     expect(objectSanitizer(v1)).toEqual(v1)
 
     const iv1 = { name: 123, age: 32 }
-    expect(() => objectSanitizer(iv1)).toThrow('Invalid name field : 123')
+    expect(() => objectSanitizer(iv1)).toThrow(defError({ value: iv1 }))
 
     const iv2 = { name: 'jeff', age: -12 }
-    expect(() => objectSanitizer(iv2)).toThrow(defError({ value: -12 }))
+    expect(() => objectSanitizer(iv2)).toThrow(defError({ value: iv2 }))
   })
 
   it('object /w value', () => {
@@ -111,6 +111,7 @@ describe('sanitizer with high-order function', () => {
   })
 
   it('using builder', () => {
+    // 2017-10-23 : 원래는 개별 필드에서 발생한 오류를 그대로 전파하려고 했으나, 실제로 원본값을 확인하는 것이 더 편리한 경우가 많아 수정되었다.
     const objectSanitizer = sanitizer.object({
       name: sanitizer.builder().nonEmptyString({ error: ({ value }) => `Invalid name field : ${value}` }).build(),
       age: sanitizer.builder().parseInt().positiveInt().build(),
@@ -120,10 +121,10 @@ describe('sanitizer with high-order function', () => {
     expect(objectSanitizer(v1)).toEqual(v1)
 
     const iv1 = { name: 123, age: 32 }
-    expect(() => objectSanitizer(iv1)).toThrow('Invalid name field : 123')
+    expect(() => objectSanitizer(iv1)).toThrow(defError({ value: iv1 }))
 
     const iv2 = { name: 'jeff', age: -12 }
-    expect(() => objectSanitizer(iv2)).toThrow(defError({ value: -12 }))
+    expect(() => objectSanitizer(iv2)).toThrow(defError({ value: iv2 }))
   })
 
   it('builder final error', () => {
