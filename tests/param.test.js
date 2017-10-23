@@ -258,4 +258,22 @@ describe('sanitizer with high-order function', () => {
     expect(s({})).toEqual({ counter: 1 })
     expect(s({})).toEqual({ counter: 2 })
   })
+
+  it('object /w anyOf(just) should insert succeeded value.', () => {
+    const s = sanitizer
+    const listSanitizer = s.object({
+      page: s.anyOf(
+        s.parsePositiveInt(),
+        s.just(1),
+      ),
+      pageSize: s.anyOf(
+        s.parsePositiveInt(),
+        s.just(10),
+      ),
+    }, {
+      requireAllFields: true,
+    })
+
+    expect(listSanitizer({ page: 5 })).toEqual({ page: 5, pageSize: 10 })
+  })
 })

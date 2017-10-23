@@ -105,6 +105,7 @@ const objectSanitizer = function ({ defError }) {
       })
 
       ensure(ld.isObject(value), error, { value, message: 'Given value is not an object.' })
+      const processedProp = []
       for (let prop in value) {
         // console.log(`Processing ${prop} : ${obj[ prop ]}`)
         if (value.hasOwnProperty(prop) && obj.hasOwnProperty(prop)) {
@@ -113,8 +114,22 @@ const objectSanitizer = function ({ defError }) {
           } catch (ex) {
             ensure(false, error, { value, message: `parameter=${prop}` })
           }
+          processedProp.push(prop)
         }
       }
+
+      // in case passing 'undefined' pass sanitize.
+      for (let prop in obj) {
+        if (obj.hasOwnProperty(prop) && processedProp.indexOf(prop) === -1 && !converted.hasOwnProperty(prop)) {
+          try {
+            converted [ prop ] = obj[ prop ](undefined, error)
+          } catch (ex) {
+            // throw error only if requireAllFields is true.
+            ensure(!requireAllFields, error, { value, message: `parameter=${prop}` })
+          }
+        }
+      }
+
       lazyFields.forEach(({ prop, mapper }) => { converted[ prop ] = mapper(converted) })
 
       if (requireAllFields) {
