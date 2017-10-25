@@ -1,0 +1,17 @@
+{
+  "presets": [
+    [
+      "env",
+      {
+        "targets": {
+          "node": "v6.10.0"
+        }
+      }
+    ],
+    "bluebird"
+  ],
+  "plugins": [
+    "transform-object-entries",
+    "transform-async-to-generator"
+  ]
+}
