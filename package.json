@@ -3,12 +3,12 @@
   "version": "0.1.2",
   "description": "Opiniated js utility belt by overdosed.",
   "main": "lib/index.js",
+  "jsnext:main": "src/index.js",
   "scripts": {
     "test": "jest",
     "test:watch": "jest --watchAll",
     "build": "babel src -d lib",
     "build:watch": "babel src -d lib -w",
-    "standard": "standard",
     "lint": "npm run lint:js",
     "lint:eslint": "eslint --ignore-path .gitignore --ignore-pattern lib",
     "lint:fix": "eslint --ignore-path .gitignore --ignore-pattern lib --fix -- . ",
