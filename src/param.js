@@ -1,20 +1,20 @@
-const ld = require('lodash')
+const _ = require('lodash')
 import moment from 'moment'
 
 export function ensure (expr, errorObject, errorData = {}) {
   if (!expr) {
     const origErrorObject = errorObject
 
-    if (ld.isFunction(errorObject)) {
+    if (_.isFunction(errorObject)) {
       errorObject = errorObject(errorData) || 'Undefined error'
     }
 
     let msg, code, status
-    if (ld.isString(errorObject)) {
+    if (_.isString(errorObject)) {
       msg = errorObject
       code = -1
       status = 400
-    } else if (ld.isObject(errorObject)) {
+    } else if (_.isObject(errorObject)) {
       msg = errorObject.msg
       code = errorObject.code
       status = errorObject.status
@@ -39,11 +39,11 @@ function ensureOneOf (value, possibles, errorObject, errorData) {
 }
 
 function ensureNonEmptyString (value, errorObject, errorData) {
-  ensure(ld.isString(value) && !ld.isEmpty(value), errorObject, errorData || { value })
+  ensure(_.isString(value) && !_.isEmpty(value), errorObject, errorData || { value })
 }
 
 function ensureBool (value, errorObject, errorData) {
-  ensure(ld.isBoolean(value), errorObject, errorData || { value })
+  ensure(_.isBoolean(value), errorObject, errorData || { value })
 }
 
 ensure.oneOf = ensureOneOf
@@ -61,7 +61,7 @@ const wrap = (funcSanitize, name = '', options = {}) => {
   return funcSanitize
 }
 export const isSanitizer = fn => {
-  return ld.isFunction(fn) && fn._sanitizer && fn._sanitizer.startsWith(signature)
+  return _.isFunction(fn) && fn._sanitizer && fn._sanitizer.startsWith(signature)
 }
 const isJustSanitizer = fn => {
   return isSanitizer(fn) && fn._sanitizer.endsWith('just')
@@ -76,8 +76,8 @@ export const getSanitizerOptions = fn => fn._sanitizerOptions
 
 const objectSanitizer = function ({ defError }) {
   return (objSrc, { requireAllFields = false, error = defError, after = (v => v) } = {}) => {
-    const obj = ld.clone(objSrc)
-    ensure(ld.isObject(obj), 'Invalid usage of sanitizer.object')
+    const obj = _.clone(objSrc)
+    ensure(_.isObject(obj), 'Invalid usage of sanitizer.object')
     const defaultValue = {}
     const _lazyFields = []
 
@@ -94,7 +94,7 @@ const objectSanitizer = function ({ defError }) {
       }
     }
 
-    const lazyFields = ld.sortBy(_lazyFields, ({ options: { priority } }) => -priority)
+    const lazyFields = _.sortBy(_lazyFields, ({ options: { priority } }) => -priority)
 
     return wrap(value => {
       let converted = {}
@@ -104,7 +104,7 @@ const objectSanitizer = function ({ defError }) {
         converted[ key ] = evaluator()
       })
 
-      ensure(ld.isObject(value), error, { value, message: 'Given value is not an object.' })
+      ensure(_.isObject(value), error, { value, message: 'Given value is not an object.' })
       const processedProp = []
       for (let prop in value) {
         // console.log(`Processing ${prop} : ${obj[ prop ]}`)
@@ -208,7 +208,7 @@ const parseIntSanitizer = () => () => {
 
 const positiveIntSanitizer = ({ defError }) => ({ error = defError } = {}) => {
   return wrap(value => {
-    ensure(ld.isInteger(value), error, { value })
+    ensure(_.isInteger(value), error, { value })
     ensure(value >= 0, error, { value })
     return value
   })
@@ -253,9 +253,9 @@ const dateTimeSanitizer = ({ defError }) => (options) => {
 
   return wrap(value => {
     let val
-    if (ld.isString(value)) {
+    if (_.isString(value)) {
       val = moment(value, options.format)
-    } else if (ld.isNumber(value)) {
+    } else if (_.isNumber(value)) {
       val = moment(new Date(value))
     } else if (value instanceof Date) {
       val = moment(value)
@@ -269,10 +269,10 @@ const dateTimeSanitizer = ({ defError }) => (options) => {
 const oneOfSanitizer = ({ defError }) => (possibles, { error = defError } = {}) => {
   let values
   let mapper
-  if (ld.isArray(possibles)) {
+  if (_.isArray(possibles)) {
     values = possibles
     mapper = index => values[ index ]
-  } else if (ld.isObject(possibles)) {
+  } else if (_.isObject(possibles)) {
     values = Object.keys(possibles)
     mapper = index => possibles[ values[ index ] ]
   } else {
@@ -287,7 +287,7 @@ const oneOfSanitizer = ({ defError }) => (possibles, { error = defError } = {}) 
 }
 
 const just = () => (value) => {
-  const getter = ld.isFunction(value) ? value : () => value
+  const getter = _.isFunction(value) ? value : () => value
   return wrap(getter, 'just')
 }
 
@@ -328,7 +328,7 @@ const fileList = ({ defError }) => ({ required = false, error = defError, defaul
       ensure(!required, error, { value })
       return defaultValue
     }
-    ensure(ld.isObject(value) && value[ 0 ], error, { value }) // FileList object looks like array but it doesn't..l
+    ensure(_.isObject(value) && value[ 0 ], error, { value }) // FileList object looks like array but it doesn't..l
     return value[ 0 ]
   })
 }
