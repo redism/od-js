@@ -1,6 +1,6 @@
 {
   "name": "od-js",
-  "version": "1.0.0",
+  "version": "0.1.2",
   "description": "Opiniated js utility belt by overdosed.",
   "main": "lib/index.js",
   "scripts": {
@@ -10,14 +10,15 @@
     "build:watch": "babel src -d lib -w",
     "standard": "standard",
     "lint": "npm run lint:js",
-    "lint:eslint": "eslint --ignore-path .gitignore --ignore-pattern internals/scripts",
-    "lint:fix": "eslint --ignore-path .gitignore --ignore-pattern internals/scripts --fix -- . ",
+    "lint:eslint": "eslint --ignore-path .gitignore --ignore-pattern lib",
+    "lint:fix": "eslint --ignore-path .gitignore --ignore-pattern lib --fix -- . ",
     "lint:js": "npm run lint:eslint -- . ",
-    "publish": "TODO"
+    "publish": "npm run lint && npm run test && npm run build"
   },
   "author": "",
-  "license": "ISC",
+  "license": "UNLICENSED",
   "dependencies": {
+    "babel-runtime": "6.26.0",
     "bluebird": "^3.5.0",
     "lodash": "4.17.4",
     "moment": "2.18.1"
