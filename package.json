@@ -1,13 +1,19 @@
 {
-  "name": "overdosed-js",
+  "name": "od-js",
   "version": "1.0.0",
-  "description": "",
+  "description": "Opiniated js utility belt by overdosed.",
   "main": "lib/index.js",
   "scripts": {
     "test": "jest",
     "test:watch": "jest --watchAll",
     "build": "babel src -d lib",
-    "build:watch": "babel src -d lib -w"
+    "build:watch": "babel src -d lib -w",
+    "standard": "standard",
+    "lint": "npm run lint:js",
+    "lint:eslint": "eslint --ignore-path .gitignore --ignore-pattern internals/scripts",
+    "lint:fix": "eslint --ignore-path .gitignore --ignore-pattern internals/scripts --fix -- . ",
+    "lint:js": "npm run lint:eslint -- . ",
+    "publish": "TODO"
   },
   "author": "",
   "license": "ISC",
@@ -23,6 +29,13 @@
     "babel-preset-bluebird": "^1.0.1",
     "babel-preset-env": "1.6.1",
     "babel-preset-node6": "^11.0.0",
+    "eslint": "4.9.0",
+    "eslint-config-standard": "10.2.1",
+    "eslint-plugin-import": "2.8.0",
+    "eslint-plugin-jest": "21.2.0",
+    "eslint-plugin-node": "5.2.1",
+    "eslint-plugin-promise": "3.6.0",
+    "eslint-plugin-standard": "3.0.1",
     "jest": "21.2.1"
   }
 }

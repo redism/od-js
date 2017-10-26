@@ -1,5 +1,5 @@
-const _ = require('lodash')
 import moment from 'moment'
+import _ from 'lodash'
 
 export function ensure (expr, errorObject, errorData = {}) {
   if (!expr) {
@@ -122,7 +122,7 @@ const objectSanitizer = function ({ defError }) {
       for (let prop in obj) {
         if (obj.hasOwnProperty(prop) && processedProp.indexOf(prop) === -1 && !converted.hasOwnProperty(prop)) {
           try {
-            converted [ prop ] = obj[ prop ](undefined, error)
+            converted[ prop ] = obj[ prop ](undefined, error)
           } catch (ex) {
             // throw error only if requireAllFields is true.
             ensure(!requireAllFields, error, { value, message: `parameter=${prop}` })
@@ -248,7 +248,7 @@ const linkStringSanitizer = ({ defError }) => ({ error = defError } = {}) => {
 const dateTimeSanitizer = ({ defError }) => (options) => {
   options = Object.assign({
     format: 'YYYY-MM-DD HH:mm:ss',
-    error: defError,
+    error: defError
   }, options || {})
 
   return wrap(value => {
@@ -363,7 +363,7 @@ function createSanitizedObject (options) {
     fileList: fileList(options),
     lazy: lazy(options),
     toString: () => passer(v => v.toString()),
-    trim: () => passer(v => v.toString().trim()),
+    trim: () => passer(v => v.toString().trim())
   }
 
   s.builder = () => {

@@ -11,7 +11,7 @@ describe('sanitizer with high-order function', () => {
   const positiveIntChecker = sanitizer.positiveInt({ error: defError })
 
   const eitherFalseOrValidLink = sanitizer.anyOf(
-    linkTester, binaryToBoolTester, { error: ({ value }) => `Invalid link setting : ${value}` },
+    linkTester, binaryToBoolTester, { error: ({ value }) => `Invalid link setting : ${value}` }
   )
 
   const validLink = 'http://www.google.com'
@@ -41,7 +41,7 @@ describe('sanitizer with high-order function', () => {
     const parseAndCheckPositive = sanitizer.chain(
       sanitizer.parseInt(),
       sanitizer.positiveInt(),
-      { error: defError },
+      { error: defError }
     )
 
     expect(parseAndCheckPositive('12')).toEqual(12)
@@ -51,7 +51,7 @@ describe('sanitizer with high-order function', () => {
   it('chain with default error', () => {
     const parseAndCheckPositive = sanitizer.chain(
       sanitizer.parseInt(),
-      sanitizer.positiveInt(),
+      sanitizer.positiveInt()
     )
 
     expect(parseAndCheckPositive('12')).toEqual(12)
@@ -61,7 +61,7 @@ describe('sanitizer with high-order function', () => {
   it('chain with custom error', () => {
     const parseAndCheckPositive = sanitizer.chain(
       sanitizer.parseInt(),
-      sanitizer.positiveInt({ error: ({ value }) => 'Nah..' }),
+      sanitizer.positiveInt({ error: ({ value }) => 'Nah..' })
     )
 
     expect(() => parseAndCheckPositive('-123')).toThrow('Nah..')
@@ -78,7 +78,7 @@ describe('sanitizer with high-order function', () => {
   it('object', () => {
     const objectSanitizer = sanitizer.object({
       name: sanitizer.nonEmptyString({ error: ({ value }) => `Invalid name field : ${value}` }),
-      age: sanitizer.chain(sanitizer.parseInt(), sanitizer.positiveInt()),
+      age: sanitizer.chain(sanitizer.parseInt(), sanitizer.positiveInt())
     })
 
     const v1 = { name: '123', age: 18 }
@@ -95,7 +95,7 @@ describe('sanitizer with high-order function', () => {
     const objectSanitizer = sanitizer.object({
       name: sanitizer.nonEmptyString(({ value }) => `Invalid name field : ${value}`),
       age: sanitizer.chain(sanitizer.parseInt(), sanitizer.positiveInt()),
-      sex: sanitizer.just('male'),
+      sex: sanitizer.just('male')
     })
 
     const v1 = { name: '123', age: 18 }
@@ -114,7 +114,7 @@ describe('sanitizer with high-order function', () => {
     // 2017-10-23 : 원래는 개별 필드에서 발생한 오류를 그대로 전파하려고 했으나, 실제로 원본값을 확인하는 것이 더 편리한 경우가 많아 수정되었다.
     const objectSanitizer = sanitizer.object({
       name: sanitizer.builder().nonEmptyString({ error: ({ value }) => `Invalid name field : ${value}` }).build(),
-      age: sanitizer.builder().parseInt().positiveInt().build(),
+      age: sanitizer.builder().parseInt().positiveInt().build()
     })
 
     const v1 = { name: '123', age: 18 }
@@ -242,7 +242,7 @@ describe('sanitizer with high-order function', () => {
 
   it('object /w requireAllFields=true', () => {
     const s = sanitizer.object({
-      name: sanitizer.nonEmptyString(),
+      name: sanitizer.nonEmptyString()
     }, { requireAllFields: true })
 
     expect(() => s({ age: 10 })).toThrow()
@@ -264,14 +264,14 @@ describe('sanitizer with high-order function', () => {
     const listSanitizer = s.object({
       page: s.anyOf(
         s.parsePositiveInt(),
-        s.just(1),
+        s.just(1)
       ),
       pageSize: s.anyOf(
         s.parsePositiveInt(),
-        s.just(10),
-      ),
+        s.just(10)
+      )
     }, {
-      requireAllFields: true,
+      requireAllFields: true
     })
 
     expect(listSanitizer({ page: 5 })).toEqual({ page: 5, pageSize: 10 })
