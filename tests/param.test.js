@@ -276,4 +276,12 @@ describe('sanitizer with high-order function', () => {
 
     expect(listSanitizer({ page: 5 })).toEqual({ page: 5, pageSize: 10 })
   })
+
+  it('array', () => {
+    const s = sanitizer
+    const array = s.array(s.parsePositiveInt())
+
+    expect(array([1, 2, 3])).toEqual([1, 2, 3])
+    expect(array(['1', 2, 3])).toEqual([1, 2, 3])
+  })
 })

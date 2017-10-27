@@ -175,6 +175,19 @@ const chainSanitizer = ({ defError }) => (...sanitizers) => {
   })
 }
 
+const arraySanitizer = ({defError}) => (sanitizer, {error=defError} = {}) => {
+  return wrap(value => {
+    ensure(_.isArray(value), error, {value})
+    return value.map((v, index) => {
+      try {
+        return sanitizer(v)
+      } catch (ex) {
+        ensure(false, error, {value, message: `Item at index ${index} failed sanitize.`})
+      }
+    })
+  })
+}
+
 const anyOfSanitizer = ({ defError }) => (...sanitizers) => {
   if (sanitizers.length === 0) {
     return v => v
@@ -346,6 +359,7 @@ function createSanitizedObject (options) {
   const s = {
     object: objectSanitizer(options),
     chain: chainSanitizer(options),
+    array: arraySanitizer(options),
     anyOf: anyOfSanitizer(options),
     mapExact: mapExactSanitizer(options),
     binaryNumberToBool: binaryNumberToBoolSanitizer(options),
