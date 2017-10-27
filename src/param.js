@@ -175,14 +175,14 @@ const chainSanitizer = ({ defError }) => (...sanitizers) => {
   })
 }
 
-const arraySanitizer = ({defError}) => (sanitizer, {error=defError} = {}) => {
+const arraySanitizer = ({ defError }) => (sanitizer, { error = defError } = {}) => {
   return wrap(value => {
-    ensure(_.isArray(value), error, {value})
+    ensure(_.isArray(value), error, { value })
     return value.map((v, index) => {
       try {
         return sanitizer(v)
       } catch (ex) {
-        ensure(false, error, {value, message: `Item at index ${index} failed sanitize.`})
+        ensure(false, error, { value, message: `Item at index ${index} failed sanitize.` })
       }
     })
   })

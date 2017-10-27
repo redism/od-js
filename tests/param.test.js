@@ -281,7 +281,7 @@ describe('sanitizer with high-order function', () => {
     const s = sanitizer
     const array = s.array(s.parsePositiveInt())
 
-    expect(array([1, 2, 3])).toEqual([1, 2, 3])
-    expect(array(['1', 2, 3])).toEqual([1, 2, 3])
+    expect(array([ 1, 2, 3 ])).toEqual([ 1, 2, 3 ])
+    expect(array([ '1', 2, 3 ])).toEqual([ 1, 2, 3 ])
   })
 })
