@@ -1,7 +1,7 @@
 export * from './param'
 import _ from 'lodash'
-import { mapObjectValues } from './util'
+import { mapObjectValues, slicedArray } from './util'
 
-_.mixin({ mapObjectValues })
+_.mixin({ mapObjectValues, slicedArray })
 
 export { _ }
