@@ -32,18 +32,19 @@ export function ensure (expr, errorObject, errorData = {}) {
     err._errorObject = origErrorObject
     throw err
   }
+  return expr
 }
 
 function ensureOneOf (value, possibles, errorObject, errorData) {
-  ensure(possibles.indexOf(value) >= 0, errorObject, errorData || { value, possibles })
+  return ensure(possibles.indexOf(value) >= 0, errorObject, errorData || { value, possibles })
 }
 
 function ensureNonEmptyString (value, errorObject, errorData) {
-  ensure(_.isString(value) && !_.isEmpty(value), errorObject, errorData || { value })
+  return ensure(_.isString(value) && !_.isEmpty(value), errorObject, errorData || { value })
 }
 
 function ensureBool (value, errorObject, errorData) {
-  ensure(_.isBoolean(value), errorObject, errorData || { value })
+  return ensure(_.isBoolean(value), errorObject, errorData || { value })
 }
 
 ensure.oneOf = ensureOneOf
@@ -258,6 +259,16 @@ const linkStringSanitizer = ({ defError }) => ({ error = defError } = {}) => {
   })
 }
 
+const regEmail = /^(([^<>()[\]\\.,;:\s@\"]+(\.[^<>()[\]\\.,;:\s@\"]+)*)|(\".+\"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/;
+const emailSanitizer = ({ defError }) => ({ error = defError } = {}) => {
+  return wrap(value => {
+    const val = value.trim()
+    ensureNonEmptyString(val, error, { value })
+    ensure(regEmail.test(val), error, { value })
+    return val
+  })
+}
+
 const dateTimeSanitizer = ({ defError }) => (options) => {
   options = Object.assign({
     format: 'YYYY-MM-DD HH:mm:ss',
@@ -365,6 +376,7 @@ function createSanitizedObject (options) {
     binaryNumberToBool: binaryNumberToBoolSanitizer(options),
     nonEmptyString: nonEmptyStringSanitizer(options),
     linkString: linkStringSanitizer(options),
+    email: emailSanitizer(options),
     parseInt: parseIntSanitizer(options),
     positiveInt: positiveIntSanitizer(options),
     dateTime: dateTimeSanitizer(options),

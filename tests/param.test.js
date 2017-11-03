@@ -284,4 +284,10 @@ describe('sanitizer with high-order function', () => {
     expect(array([ 1, 2, 3 ])).toEqual([ 1, 2, 3 ])
     expect(array([ '1', 2, 3 ])).toEqual([ 1, 2, 3 ])
   })
+
+  it('email', () => {
+    const s = sanitizer.email()
+    expect(s('redism@gmail.com')).toEqual('redism@gmail.com')
+    expect(() => s('jay')).toThrow()
+  })
 })
