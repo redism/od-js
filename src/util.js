@@ -35,4 +35,3 @@ export function maketh (val) {
       return `${val}th`
   }
 }
-
