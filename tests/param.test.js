@@ -78,7 +78,7 @@ describe('sanitizer with high-order function', () => {
   it('object', () => {
     const objectSanitizer = sanitizer.object({
       name: sanitizer.nonEmptyString({ error: ({ value }) => `Invalid name field : ${value}` }),
-      age: sanitizer.chain(sanitizer.parseInt(), sanitizer.positiveInt())
+      age: sanitizer.chain(sanitizer.parseInt(), sanitizer.positiveInt()),
     })
 
     const v1 = { name: '123', age: 18 }
@@ -95,7 +95,7 @@ describe('sanitizer with high-order function', () => {
     const objectSanitizer = sanitizer.object({
       name: sanitizer.nonEmptyString(({ value }) => `Invalid name field : ${value}`),
       age: sanitizer.chain(sanitizer.parseInt(), sanitizer.positiveInt()),
-      sex: sanitizer.just('male')
+      sex: sanitizer.just('male'),
     })
 
     const v1 = { name: '123', age: 18 }
@@ -114,7 +114,7 @@ describe('sanitizer with high-order function', () => {
     // 2017-10-23 : 원래는 개별 필드에서 발생한 오류를 그대로 전파하려고 했으나, 실제로 원본값을 확인하는 것이 더 편리한 경우가 많아 수정되었다.
     const objectSanitizer = sanitizer.object({
       name: sanitizer.builder().nonEmptyString({ error: ({ value }) => `Invalid name field : ${value}` }).build(),
-      age: sanitizer.builder().parseInt().positiveInt().build()
+      age: sanitizer.builder().parseInt().positiveInt().build(),
     })
 
     const v1 = { name: '123', age: 18 }
@@ -221,7 +221,7 @@ describe('sanitizer with high-order function', () => {
       v1: sanitizer.parseInt(),
       v2: sanitizer.parseInt(),
       sum: sanitizer.lazy(obj => obj.v1 + obj.v2, { priority: 10 }),
-      sum2: sanitizer.lazy(obj => obj.v1 + obj.v2 + obj.sum, { priority: 5 })
+      sum2: sanitizer.lazy(obj => obj.v1 + obj.v2 + obj.sum, { priority: 5 }),
     })
 
     expect(s({ v1: 10, v2: '20' })).toEqual({ v1: 10, v2: 20, sum: 30, sum2: 60 })
@@ -232,9 +232,9 @@ describe('sanitizer with high-order function', () => {
       v1: sanitizer.parseInt(),
       v2: sanitizer.parseInt(),
       sum: sanitizer.lazy(obj => obj.v1 + obj.v2, { priority: 10 }),
-      sum2: sanitizer.lazy(obj => obj.v1 + obj.v2 + obj.sum, { priority: 5 })
+      sum2: sanitizer.lazy(obj => obj.v1 + obj.v2 + obj.sum, { priority: 5 }),
     }, {
-      after: v => v.sum2
+      after: v => v.sum2,
     })
 
     expect(s({ v1: 10, v2: '20' })).toEqual(60)
@@ -242,7 +242,7 @@ describe('sanitizer with high-order function', () => {
 
   it('object /w requireAllFields=true', () => {
     const s = sanitizer.object({
-      name: sanitizer.nonEmptyString()
+      name: sanitizer.nonEmptyString(),
     }, { requireAllFields: true })
 
     expect(() => s({ age: 10 })).toThrow()
@@ -251,7 +251,7 @@ describe('sanitizer with high-order function', () => {
   it('object sanitizer with just function', () => {
     let i = 0
     const s = sanitizer.object({
-      counter: sanitizer.just(() => i++)
+      counter: sanitizer.just(() => i++),
     })
 
     expect(s({})).toEqual({ counter: 0 })
@@ -269,9 +269,9 @@ describe('sanitizer with high-order function', () => {
       pageSize: s.anyOf(
         s.parsePositiveInt(),
         s.just(10)
-      )
+      ),
     }, {
-      requireAllFields: true
+      requireAllFields: true,
     })
 
     expect(listSanitizer({ page: 5 })).toEqual({ page: 5, pageSize: 10 })

@@ -272,7 +272,7 @@ const emailSanitizer = ({ defError }) => ({ error = defError } = {}) => {
 const dateTimeSanitizer = ({ defError }) => (options) => {
   options = Object.assign({
     format: 'YYYY-MM-DD HH:mm:ss',
-    error: defError
+    error: defError,
   }, options || {})
 
   return wrap(value => {
@@ -389,7 +389,7 @@ function createSanitizedObject (options) {
     fileList: fileList(options),
     lazy: lazy(options),
     toString: () => passer(v => v.toString()),
-    trim: () => passer(v => v.toString().trim())
+    trim: () => passer(v => v.toString().trim()),
   }
 
   s.builder = () => {
@@ -404,7 +404,7 @@ function createSanitizedObject (options) {
             value: (...args) => {
               addToBuilder(s[ san ](...args))
               return builder
-            }
+            },
           })
         })(san)
       }
@@ -423,7 +423,7 @@ function createSanitizedObject (options) {
 
 export const sanitizer = (options) => {
   options = Object.assign({
-    defError: 'Invalid param'
+    defError: 'Invalid param',
   }, options || {})
 
   return createSanitizedObject(options)
