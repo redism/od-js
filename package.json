@@ -1,6 +1,6 @@
 {
   "name": "od-js",
-  "version": "0.1.2",
+  "version": "0.1.3",
   "description": "Opiniated js utility belt by overdosed.",
   "main": "lib/index.js",
   "jsnext:main": "src/index.js",
