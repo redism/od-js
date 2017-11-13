@@ -10,6 +10,35 @@
     "comma-dangle": [
       "error",
       "always-multiline"
+    ],
+    "spaced-comment": [
+      0,
+      "always",
+      {
+        "line": {
+          "markers": [
+            "*package",
+            "!",
+            "/",
+            ",",
+            "="
+          ]
+        },
+        "block": {
+          "balanced": true,
+          "markers": [
+            "*package",
+            "!",
+            ",",
+            ":",
+            "::",
+            "flow-include"
+          ],
+          "exceptions": [
+            "*"
+          ]
+        }
+      }
     ]
   }
 }
