@@ -290,4 +290,12 @@ describe('sanitizer with high-order function', () => {
     expect(s('redism@gmail.com')).toEqual('redism@gmail.com')
     expect(() => s('jay')).toThrow()
   })
+
+  it('object error propagation', () => {
+    const s = sanitizer.object({
+      id: sanitizer.email({ error: 'id error.' }),
+    }, { version: 2 })
+
+    expect(() => s({ id: null })).toThrow('id error.')
+  })
 })

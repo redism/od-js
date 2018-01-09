@@ -76,7 +76,7 @@ export const isObjectSanitizer = fn => {
 export const getSanitizerOptions = fn => fn._sanitizerOptions
 
 const objectSanitizer = function ({ defError }) {
-  return (objSrc, { requireAllFields = false, error = defError, after = (v => v) } = {}) => {
+  return (objSrc, { version = 1, requireAllFields = false, error = defError, after = (v => v) } = {}) => {
     const obj = _.clone(objSrc)
     ensure(_.isObject(obj), 'Invalid usage of sanitizer.object')
     const defaultValue = {}
@@ -113,7 +113,11 @@ const objectSanitizer = function ({ defError }) {
           try {
             converted[ prop ] = obj[ prop ](value[ prop ], error)
           } catch (ex) {
-            ensure(false, error, { value, message: `parameter=${prop}` })
+            if (version === 1) {
+              ensure(false, error, { value, message: `parameter=${prop}` })
+            } else {
+              throw ex
+            }
           }
           processedProp.push(prop)
         }
@@ -262,6 +266,7 @@ const linkStringSanitizer = ({ defError }) => ({ error = defError } = {}) => {
 const regEmail = /^(([^<>()[\]\\.,;:\s@"]+(\.[^<>()[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/
 const emailSanitizer = ({ defError }) => ({ error = defError } = {}) => {
   return wrap(value => {
+    ensure(_.isString(value), error, { value })
     const val = value.trim()
     ensureNonEmptyString(val, error, { value })
     ensure(regEmail.test(val), error, { value })
