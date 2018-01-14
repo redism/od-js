@@ -298,4 +298,24 @@ describe('sanitizer with high-order function', () => {
 
     expect(() => s({ id: null })).toThrow('id error.')
   })
+
+  it('existsInObjectValues', () => {
+    const STATUS = {
+      Pending: 0,
+      Confirmed: 1,
+      Rejected: 2,
+    }
+
+    const s = sanitizer.object({
+      status: sanitizer.existsInObjectValues(STATUS, { error: 'status error' }),
+    }, {
+      version: 2,
+    })
+
+    expect(s({ status: 0 })).toEqual({ status: 0 })
+    expect(s({ status: 1 })).toEqual({ status: 1 })
+    expect(s({ status: 2 })).toEqual({ status: 2 })
+    expect(() => s({ status: '0' })).toThrow('status error')
+    expect(() => s({ status: 3 })).toThrow('status error')
+  })
 })

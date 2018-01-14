@@ -362,6 +362,17 @@ const fileList = ({ defError }) => ({ required = false, error = defError, defaul
   })
 }
 
+const existsInObjectValues = function ({ defError }) {
+  return function (obj, { error = defError } = {}) {
+    const values = _.values(obj)
+    ensure(_.isArray(values), `existsInObjectValues configuration error.`)
+    return wrap(function (value) {
+      ensure(values.indexOf(value) >= 0, error, { value })
+      return value
+    })
+  }
+}
+
 /**
  * Used exclusively on sanitizer.object(). Field is evaluated after other fields of higher priorities are evaluated.
  */
@@ -393,6 +404,7 @@ function createSanitizedObject (options) {
     pass: pass(options),
     fileList: fileList(options),
     lazy: lazy(options),
+    existsInObjectValues: existsInObjectValues(options),
     toString: () => passer(v => v.toString()),
     trim: () => passer(v => v.toString().trim()),
   }
