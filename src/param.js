@@ -180,14 +180,15 @@ const chainSanitizer = ({ defError }) => (...sanitizers) => {
   })
 }
 
-const arraySanitizer = ({ defError }) => (sanitizer, { error = defError } = {}) => {
+const arraySanitizer = ({ defError }) => (sanitizer, options = {}) => {
   return wrap(value => {
-    ensure(_.isArray(value), error, { value })
+    const { error } = options
+    ensure(_.isArray(value), error || defError, { value })
     return value.map((v, index) => {
       try {
         return sanitizer(v)
       } catch (ex) {
-        ensure(false, error, { value, message: `Item at index ${index} failed sanitize.` })
+        ensure(false, error || defError, { value, message: `Item at index ${index} failed sanitize.` })
       }
     })
   })
@@ -224,41 +225,46 @@ const parseIntSanitizer = () => () => {
   return wrap(value => parseInt(value, 10))
 }
 
-const positiveIntSanitizer = ({ defError }) => ({ error = defError } = {}) => {
+const positiveIntSanitizer = ({ defError }) => (options = {}) => {
   return wrap(value => {
-    ensure(_.isInteger(value), error, { value })
-    ensure(value >= 0, error, { value })
+    const { error } = options
+    ensure(_.isInteger(value), error || defError, { value })
+    ensure(value >= 0, error || defError, { value })
     return value
   })
 }
 
-const nonEmptyStringSanitizer = ({ defError }) => ({ error = defError } = {}) => {
+const nonEmptyStringSanitizer = ({ defError }) => (options = {}) => {
   return wrap(value => {
-    ensure.nonEmptyString(value, error, { value })
+    const { error } = options
+    ensure.nonEmptyString(value, error || defError, { value })
     return value
   })
 }
 
-const mapExactSanitizer = ({ defError }) => (valueToCheck, valueToRet, { error = defError } = {}) => {
+const mapExactSanitizer = ({ defError }) => (valueToCheck, valueToRet, options = {}) => {
   return wrap(value => {
-    ensure(value === valueToCheck, error, { value })
+    const { error } = options
+    ensure(value === valueToCheck, error || defError, { value })
     return valueToRet
   })
 }
 
-const binaryNumberToBoolSanitizer = ({ defError }) => ({ error = defError } = {}) => {
+const binaryNumberToBoolSanitizer = ({ defError }) => (options = {}) => {
   return wrap(value => {
+    const { error } = options
     const i = parseInt(value, 10)
-    ensure.oneOf(i, [ 0, 1 ], error, { value })
+    ensure.oneOf(i, [ 0, 1 ], error || defError, { value })
     return i === 1
   })
 }
 
-const linkStringSanitizer = ({ defError }) => ({ error = defError } = {}) => {
+const linkStringSanitizer = ({ defError }) => (options = {}) => {
   return wrap(value => {
+    const { error } = options
     const val = value.trim()
-    ensureNonEmptyString(val, error, { value })
-    ensure(val.toLowerCase().startsWith('http'), error, { value })
+    ensureNonEmptyString(val, error || defError, { value })
+    ensure(val.toLowerCase().startsWith('http'), error || defError, { value })
     return val
   })
 }
@@ -295,9 +301,10 @@ const dateTimeSanitizer = ({ defError }) => (options) => {
   })
 }
 
-const oneOfSanitizer = ({ defError }) => (possibles, { error = defError } = {}) => {
+const oneOfSanitizer = ({ defError }) => (possibles, options = {}) => {
   let values
   let mapper
+  const { error } = options
   if (_.isArray(possibles)) {
     values = possibles
     mapper = index => values[ index ]
@@ -310,7 +317,7 @@ const oneOfSanitizer = ({ defError }) => (possibles, { error = defError } = {}) 
 
   return wrap(value => {
     const index = values.indexOf(value)
-    ensure(index >= 0, error, { value, possibles })
+    ensure(index >= 0, error || defError, { value, possibles })
     return mapper(index)
   })
 }
@@ -320,19 +327,19 @@ const just = () => (value) => {
   return wrap(getter, 'just')
 }
 
-const exactly = ({ defError }) => (val, { error = defError } = {}) => {
+const exactly = ({ defError }) => (val, { error } = {}) => {
   return wrap(value => {
-    ensure(val === value, error, { value })
+    ensure(val === value, error || defError, { value })
     return value
   })
 }
 
-const ensureSanitizer = ({ defError }) => (checker, { error = defError } = {}) => {
+const ensureSanitizer = ({ defError }) => (checker, { error } = {}) => {
   return wrap(value => {
     try {
-      ensure(checker(value), error, { value })
+      ensure(checker(value), error || defError, { value })
     } catch (ex) {
-      ensure(false, error, { value })
+      ensure(false, error || defError, { value })
     }
     return value
   })
@@ -343,31 +350,31 @@ const pass = () => (mapper = v => v) => {
 }
 
 const parsePositiveInt = function ({ defError }) {
-  return function ({ error = defError } = {}) {
-    return this.builder().parseInt().positiveInt().build({ error })
+  return function (options = {}) {
+    return this.builder().parseInt().positiveInt().build({ error: options.error || defError })
   }
 }
 
 /**
  * Parse FileList[] which can be get from Input of type "file".
  */
-const fileList = ({ defError }) => ({ required = false, error = defError, defaultValue = undefined } = {}) => {
+const fileList = ({ defError }) => ({ required = false, error, defaultValue = undefined } = {}) => {
   return wrap(value => {
     if (!value) {
-      ensure(!required, error, { value })
+      ensure(!required, error || defError, { value })
       return defaultValue
     }
-    ensure(_.isObject(value) && value[ 0 ], error, { value }) // FileList object looks like array but it doesn't..l
+    ensure(_.isObject(value) && value[ 0 ], error || defError, { value }) // FileList object looks like array but it doesn't..l
     return value[ 0 ]
   })
 }
 
 const existsInObjectValues = function ({ defError }) {
-  return function (obj, { error = defError } = {}) {
+  return function (obj, { error } = {}) {
     const values = _.values(obj)
     ensure(_.isArray(values), `existsInObjectValues configuration error.`)
     return wrap(function (value) {
-      ensure(values.indexOf(value) >= 0, error, { value })
+      ensure(values.indexOf(value) >= 0, error || defError, { value })
       return value
     })
   }
@@ -376,7 +383,7 @@ const existsInObjectValues = function ({ defError }) {
 /**
  * Used exclusively on sanitizer.object(). Field is evaluated after other fields of higher priorities are evaluated.
  */
-const lazy = ({ defError }) => (mapper, { priority = 10, error = defError } = {}) => {
+const lazy = ({ defError }) => (mapper, { priority = 10, error } = {}) => {
   return wrap(value => mapper(value), 'lazy', { priority })
 }
 
