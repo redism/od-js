@@ -1,7 +1,8 @@
+/* eslint-disable no-underscore-dangle,no-restricted-syntax,no-param-reassign,prefer-destructuring */
 import moment from 'moment'
 import _ from 'lodash'
 
-export function ensure (expr, errorObject, errorData = {}) {
+export function ensure(expr, errorObject, errorData = {}) {
   if (!expr) {
     const origErrorObject = errorObject
 
@@ -9,7 +10,9 @@ export function ensure (expr, errorObject, errorData = {}) {
       errorObject = errorObject(errorData) || 'Undefined error'
     }
 
-    let msg, code, status
+    let msg
+    let code
+    let status
     if (_.isString(errorObject)) {
       msg = errorObject
       code = -1
@@ -35,15 +38,15 @@ export function ensure (expr, errorObject, errorData = {}) {
   return expr
 }
 
-function ensureOneOf (value, possibles, errorObject, errorData) {
+function ensureOneOf(value, possibles, errorObject, errorData) {
   return ensure(possibles.indexOf(value) >= 0, errorObject, errorData || { value, possibles })
 }
 
-function ensureNonEmptyString (value, errorObject, errorData) {
+function ensureNonEmptyString(value, errorObject, errorData) {
   return ensure(_.isString(value) && !_.isEmpty(value), errorObject, errorData || { value })
 }
 
-function ensureBool (value, errorObject, errorData) {
+function ensureBool(value, errorObject, errorData) {
   return ensure(_.isBoolean(value), errorObject, errorData || { value })
 }
 
@@ -54,7 +57,7 @@ ensure.bool = ensureBool
 const signature = 'od.sanitizer'
 const wrap = (funcSanitize, name = '', options = {}) => {
   if (name) {
-    funcSanitize._sanitizer = [ signature, name ].join('.')
+    funcSanitize._sanitizer = [signature, name].join('.')
   } else {
     funcSanitize._sanitizer = signature
   }
@@ -75,75 +78,88 @@ export const isObjectSanitizer = fn => {
 }
 export const getSanitizerOptions = fn => fn._sanitizerOptions
 
-const objectSanitizer = function ({ defError }) {
-  return (objSrc, { version = 1, requireAllFields = false, error = defError, after = (v => v) } = {}) => {
+const objectSanitizer = function objectSanitizer({ defError }) {
+  return (objSrc, { version = 1, requireAllFields = false, error = defError, after = v => v } = {}) => {
     const obj = _.clone(objSrc)
     ensure(_.isObject(obj), 'Invalid usage of sanitizer.object')
     const defaultValue = {}
     const _lazyFields = []
 
-    for (let prop in obj) {
-      if (obj.hasOwnProperty(prop)) {
-        ensure(isSanitizer(obj[ prop ]), `Invalid usage of sanitizer.object, [${prop}] is not a sanitizer`)
-        if (isJustSanitizer(obj[ prop ])) {
-          defaultValue[ prop ] = () => obj[ prop ]()
-        } else if (isLazySanitizer(obj[ prop ])) {
-          const lazySanitizerOptions = obj[ prop ]._sanitizerOptions
-          _lazyFields.push({ mapper: obj[ prop ], prop, options: lazySanitizerOptions })
-          delete obj[ prop ]
+    // eslint-disable-next-line no-restricted-syntax
+    for (const prop in obj) {
+      if ({}.hasOwnProperty.call(obj, prop)) {
+        ensure(isSanitizer(obj[prop]), `Invalid usage of sanitizer.object, [${prop}] is not a sanitizer`)
+        if (isJustSanitizer(obj[prop])) {
+          defaultValue[prop] = () => obj[prop]()
+        } else if (isLazySanitizer(obj[prop])) {
+          const lazySanitizerOptions = obj[prop]._sanitizerOptions
+          _lazyFields.push({ mapper: obj[prop], prop, options: lazySanitizerOptions })
+          delete obj[prop]
         }
       }
     }
 
     const lazyFields = _.sortBy(_lazyFields, ({ options: { priority } }) => -priority)
 
-    return wrap(value => {
-      let converted = {}
+    return wrap(
+      value => {
+        const converted = {}
 
-      // lazy sanitizer can have a function, so evaluate each time.
-      Object.entries(defaultValue).forEach(([ key, evaluator ]) => {
-        converted[ key ] = evaluator()
-      })
+        // lazy sanitizer can have a function, so evaluate each time.
+        Object.entries(defaultValue).forEach(([key, evaluator]) => {
+          converted[key] = evaluator()
+        })
 
-      ensure(_.isObject(value), error, { value, message: 'Given value is not an object.' })
-      const processedProp = []
-      for (let prop in value) {
-        // console.log(`Processing ${prop} : ${obj[ prop ]}`)
-        if (value.hasOwnProperty(prop) && obj.hasOwnProperty(prop)) {
-          try {
-            converted[ prop ] = obj[ prop ](value[ prop ], error)
-          } catch (ex) {
-            if (version === 1) {
-              ensure(false, error, { value, message: `parameter=${prop}` })
-            } else {
-              throw ex
+        ensure(_.isObject(value), error, { value, message: 'Given value is not an object.' })
+        const processedProp = []
+        for (const prop in value) {
+          // console.log(`Processing ${prop} : ${obj[ prop ]}`)
+          if ({}.hasOwnProperty.call(value, prop) && {}.hasOwnProperty.call(obj, prop)) {
+            try {
+              converted[prop] = obj[prop](value[prop], error)
+            } catch (ex) {
+              if (version === 1) {
+                ensure(false, error, { value, message: `parameter=${prop}` })
+              } else {
+                throw ex
+              }
+            }
+            processedProp.push(prop)
+          }
+        }
+
+        // in case passing 'undefined' pass sanitize.
+        for (const prop in obj) {
+          if (
+            {}.hasOwnProperty.call(obj, prop) &&
+            processedProp.indexOf(prop) === -1 &&
+            !{}.hasOwnProperty.call(converted, prop)
+          ) {
+            try {
+              converted[prop] = obj[prop](undefined, error)
+            } catch (ex) {
+              // throw error only if requireAllFields is true.
+              ensure(!requireAllFields, error, { value, message: `parameter=${prop}` })
             }
           }
-          processedProp.push(prop)
         }
-      }
 
-      // in case passing 'undefined' pass sanitize.
-      for (let prop in obj) {
-        if (obj.hasOwnProperty(prop) && processedProp.indexOf(prop) === -1 && !converted.hasOwnProperty(prop)) {
-          try {
-            converted[ prop ] = obj[ prop ](undefined, error)
-          } catch (ex) {
-            // throw error only if requireAllFields is true.
-            ensure(!requireAllFields, error, { value, message: `parameter=${prop}` })
-          }
+        lazyFields.forEach(({ prop, mapper }) => {
+          converted[prop] = mapper(converted)
+        })
+
+        if (requireAllFields) {
+          ensure(Object.keys(converted).length === Object.keys(obj).length, error, {
+            value,
+            message: 'Missing fields exist.',
+          })
         }
-      }
 
-      lazyFields.forEach(({ prop, mapper }) => { converted[ prop ] = mapper(converted) })
-
-      if (requireAllFields) {
-        ensure(Object.keys(converted).length === Object.keys(obj).length,
-          error, { value, message: 'Missing fields exist.' })
-      }
-
-      return after(converted)
-    }, 'object', { keys: Object.keys(obj) })
+        return after(converted)
+      },
+      'object',
+      { keys: Object.keys(obj) }
+    )
   }
 }
 
@@ -152,13 +168,14 @@ const chainSanitizer = ({ defError }) => (...sanitizers) => {
     return v => v
   }
 
-  const last = sanitizers[ sanitizers.length - 1 ]
+  const last = sanitizers[sanitizers.length - 1]
   let maxIndex = sanitizers.length - 1
   let options = {}
 
   if (isSanitizer(last)) {
-    maxIndex++
-  } else { // assume it's an option.
+    maxIndex += 1
+  } else {
+    // assume it's an option.
     options = last
   }
 
@@ -168,9 +185,9 @@ const chainSanitizer = ({ defError }) => (...sanitizers) => {
 
   return wrap(value => {
     let intermediateValue = value
-    for (let i = 0; i < maxIndex; i++) {
+    for (let i = 0; i < maxIndex; i += 1) {
       try {
-        intermediateValue = sanitizers[ i ](intermediateValue)
+        intermediateValue = sanitizers[i](intermediateValue)
       } catch (ex) {
         const err = errorIsNotDefault ? options.error || ex._errorObject : ex._errorObject || options.error
         ensure(false, err, { value })
@@ -189,6 +206,7 @@ const arraySanitizer = ({ defError }) => (sanitizer, options = {}) => {
         return sanitizer(v)
       } catch (ex) {
         ensure(false, error || defError, { value, message: `Item at index ${index} failed sanitize.` })
+        return null
       }
     })
   })
@@ -199,25 +217,28 @@ const anyOfSanitizer = ({ defError }) => (...sanitizers) => {
     return v => v
   }
 
-  const last = sanitizers[ sanitizers.length - 1 ]
+  const last = sanitizers[sanitizers.length - 1]
   let maxIndex = sanitizers.length - 1
   let options = {}
   if (isSanitizer(last)) {
-    maxIndex++
-  } else { // assume it's an option.
+    maxIndex += 1
+  } else {
+    // assume it's an option.
     options = last
   }
 
   options = Object.assign({ error: defError }, options)
 
   return wrap(value => {
-    for (let i = 0; i < maxIndex; i++) {
+    for (let i = 0; i < maxIndex; i += 1) {
       try {
-        return sanitizers[ i ](value)
+        return sanitizers[i](value)
       } catch (ex) {
+        //
       }
     }
     ensure(false, options.error, { value })
+    return undefined
   })
 }
 
@@ -254,7 +275,7 @@ const binaryNumberToBoolSanitizer = ({ defError }) => (options = {}) => {
   return wrap(value => {
     const { error } = options
     const i = parseInt(value, 10)
-    ensure.oneOf(i, [ 0, 1 ], error || defError, { value })
+    ensure.oneOf(i, [0, 1], error || defError, { value })
     return i === 1
   })
 }
@@ -280,11 +301,14 @@ const emailSanitizer = ({ defError }) => ({ error = defError } = {}) => {
   })
 }
 
-const dateTimeSanitizer = ({ defError }) => (options) => {
-  options = Object.assign({
-    format: 'YYYY-MM-DD HH:mm:ss',
-    error: defError,
-  }, options || {})
+const dateTimeSanitizer = ({ defError }) => options => {
+  options = Object.assign(
+    {
+      format: 'YYYY-MM-DD HH:mm:ss',
+      error: defError,
+    },
+    options || {}
+  )
 
   return wrap(value => {
     let val
@@ -307,10 +331,10 @@ const oneOfSanitizer = ({ defError }) => (possibles, options = {}) => {
   const { error } = options
   if (_.isArray(possibles)) {
     values = possibles
-    mapper = index => values[ index ]
+    mapper = index => values[index]
   } else if (_.isObject(possibles)) {
     values = Object.keys(possibles)
-    mapper = index => possibles[ values[ index ] ]
+    mapper = index => possibles[values[index]]
   } else {
     ensure(false, 'oneOf requires array or object.')
   }
@@ -322,7 +346,7 @@ const oneOfSanitizer = ({ defError }) => (possibles, options = {}) => {
   })
 }
 
-const just = () => (value) => {
+const just = () => value => {
   const getter = _.isFunction(value) ? value : () => value
   return wrap(getter, 'just')
 }
@@ -349,9 +373,12 @@ const pass = () => (mapper = v => v) => {
   return wrap(v => mapper(v))
 }
 
-const parsePositiveInt = function ({ defError }) {
-  return function (options = {}) {
-    return this.builder().parseInt().positiveInt().build({ error: options.error || defError })
+const parsePositiveInt = function parsePositiveInt({ defError }) {
+  return function parsePositiveIntInside(options = {}) {
+    return this.builder()
+      .parseInt()
+      .positiveInt()
+      .build({ error: options.error || defError })
   }
 }
 
@@ -364,16 +391,16 @@ const fileList = ({ defError }) => ({ required = false, error, defaultValue = un
       ensure(!required, error || defError, { value })
       return defaultValue
     }
-    ensure(_.isObject(value) && value[ 0 ], error || defError, { value }) // FileList object looks like array but it doesn't..l
-    return value[ 0 ]
+    ensure(_.isObject(value) && value[0], error || defError, { value }) // FileList object looks like array but it doesn't..l
+    return value[0]
   })
 }
 
-const existsInObjectValues = function ({ defError }) {
-  return function (obj, { error } = {}) {
+const existsInObjectValues = function existsInObjectValues({ defError }) {
+  return function existsInObjectValuesIn(obj, { error } = {}) {
     const values = _.values(obj)
     ensure(_.isArray(values), `existsInObjectValues configuration error.`)
-    return wrap(function (value) {
+    return wrap(function existsInObjectValuesInWrapped(value) {
       ensure(values.indexOf(value) >= 0, error || defError, { value })
       return value
     })
@@ -383,11 +410,12 @@ const existsInObjectValues = function ({ defError }) {
 /**
  * Used exclusively on sanitizer.object(). Field is evaluated after other fields of higher priorities are evaluated.
  */
+// eslint-disable-next-line no-unused-vars
 const lazy = ({ defError }) => (mapper, { priority = 10, error } = {}) => {
   return wrap(value => mapper(value), 'lazy', { priority })
 }
 
-function createSanitizedObject (options) {
+function createSanitizedObject(options) {
   const passer = pass(options)
 
   const s = {
@@ -420,13 +448,13 @@ function createSanitizedObject (options) {
     const builder = {}
     const list = []
     const addToBuilder = sanitizer => list.push(sanitizer)
-    for (let san in s) {
-      if (s.hasOwnProperty(san)) {
-        ((san) => {
+    for (const san in s) {
+      if ({}.hasOwnProperty.call(s, san)) {
+        ;(san => {
           Object.defineProperty(builder, san, {
             configurable: false,
             value: (...args) => {
-              addToBuilder(s[ san ](...args))
+              addToBuilder(s[san](...args))
               return builder
             },
           })
@@ -445,10 +473,13 @@ function createSanitizedObject (options) {
   return s
 }
 
-export const sanitizer = (options) => {
-  options = Object.assign({
-    defError: 'Invalid param',
-  }, options || {})
+export const sanitizer = options => {
+  options = Object.assign(
+    {
+      defError: 'Invalid param',
+    },
+    options || {}
+  )
 
   return createSanitizedObject(options)
 }

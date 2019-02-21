@@ -1,18 +1,18 @@
-import { sanitizer as Sanitizer } from '../src/param'
 import _ from 'lodash'
+import { sanitizer as Sanitizer } from '../src/param'
 
 describe('sanitizer with high-order function', () => {
   const defError = ({ value }) => `Invalid param : ${value} / [${typeof value}]`
-  const sanitizer = Sanitizer({ defError: defError })
+  const sanitizer = Sanitizer({ defError })
 
   const linkTester = sanitizer.linkString({ error: ({ value }) => `Invalid link : ${value}` })
   const binaryToBoolTester = sanitizer.binaryNumberToBool({ error: ({ value }) => `Invalid value : ${value}` })
   const infToNull = sanitizer.mapExact('inf', null, { error: defError })
   const positiveIntChecker = sanitizer.positiveInt({ error: defError })
 
-  const eitherFalseOrValidLink = sanitizer.anyOf(
-    linkTester, binaryToBoolTester, { error: ({ value }) => `Invalid link setting : ${value}` }
-  )
+  const eitherFalseOrValidLink = sanitizer.anyOf(linkTester, binaryToBoolTester, {
+    error: ({ value }) => `Invalid link setting : ${value}`,
+  })
 
   const validLink = 'http://www.google.com'
   const invalidLink = 'htt://www.google.com'
@@ -38,21 +38,14 @@ describe('sanitizer with high-order function', () => {
   })
 
   it('chain', () => {
-    const parseAndCheckPositive = sanitizer.chain(
-      sanitizer.parseInt(),
-      sanitizer.positiveInt(),
-      { error: defError }
-    )
+    const parseAndCheckPositive = sanitizer.chain(sanitizer.parseInt(), sanitizer.positiveInt(), { error: defError })
 
     expect(parseAndCheckPositive('12')).toEqual(12)
     expect(() => parseAndCheckPositive('-123')).toThrow(defError({ value: '-123' }))
   })
 
   it('chain with default error', () => {
-    const parseAndCheckPositive = sanitizer.chain(
-      sanitizer.parseInt(),
-      sanitizer.positiveInt()
-    )
+    const parseAndCheckPositive = sanitizer.chain(sanitizer.parseInt(), sanitizer.positiveInt())
 
     expect(parseAndCheckPositive('12')).toEqual(12)
     expect(() => parseAndCheckPositive('-123')).toThrow(defError({ value: '-123' }))
@@ -113,8 +106,15 @@ describe('sanitizer with high-order function', () => {
   it('using builder', () => {
     // 2017-10-23 : 원래는 개별 필드에서 발생한 오류를 그대로 전파하려고 했으나, 실제로 원본값을 확인하는 것이 더 편리한 경우가 많아 수정되었다.
     const objectSanitizer = sanitizer.object({
-      name: sanitizer.builder().nonEmptyString({ error: ({ value }) => `Invalid name field : ${value}` }).build(),
-      age: sanitizer.builder().parseInt().positiveInt().build(),
+      name: sanitizer
+        .builder()
+        .nonEmptyString({ error: ({ value }) => `Invalid name field : ${value}` })
+        .build(),
+      age: sanitizer
+        .builder()
+        .parseInt()
+        .positiveInt()
+        .build(),
     })
 
     const v1 = { name: '123', age: 18 }
@@ -128,26 +128,39 @@ describe('sanitizer with high-order function', () => {
   })
 
   it('builder final error', () => {
-    const s = sanitizer.builder().parseInt().positiveInt().build({ error: ({ value }) => `No ${value}` })
+    const s = sanitizer
+      .builder()
+      .parseInt()
+      .positiveInt()
+      .build({ error: ({ value }) => `No ${value}` })
     expect(() => s(-1)).toThrow('No -1')
   })
 
   it('dateTime', () => {
-    const s = sanitizer.builder().dateTime().build()
+    const s = sanitizer
+      .builder()
+      .dateTime()
+      .build()
     const t = '2018-01-13 01:23:45'
     expect(s(t)).toEqual(t)
     expect(() => s('')).toThrow()
   })
 
   it('oneOf', () => {
-    const s = sanitizer.builder().oneOf([ 0, 1 ]).build()
+    const s = sanitizer
+      .builder()
+      .oneOf([0, 1])
+      .build()
     expect(s(0)).toEqual(0)
     expect(() => s('1')).toThrow()
     expect(() => s('2')).toThrow()
   })
 
   it('oneOf map', () => {
-    const s = sanitizer.builder().oneOf({ 'sc': 0, 'bc': 1 }).build()
+    const s = sanitizer
+      .builder()
+      .oneOf({ sc: 0, bc: 1 })
+      .build()
     expect(s('sc')).toEqual(0)
     expect(s('bc')).toEqual(1)
     expect(() => s('1')).toThrow()
@@ -228,22 +241,28 @@ describe('sanitizer with high-order function', () => {
   })
 
   it('object /w after', () => {
-    const s = sanitizer.object({
-      v1: sanitizer.parseInt(),
-      v2: sanitizer.parseInt(),
-      sum: sanitizer.lazy(obj => obj.v1 + obj.v2, { priority: 10 }),
-      sum2: sanitizer.lazy(obj => obj.v1 + obj.v2 + obj.sum, { priority: 5 }),
-    }, {
-      after: v => v.sum2,
-    })
+    const s = sanitizer.object(
+      {
+        v1: sanitizer.parseInt(),
+        v2: sanitizer.parseInt(),
+        sum: sanitizer.lazy(obj => obj.v1 + obj.v2, { priority: 10 }),
+        sum2: sanitizer.lazy(obj => obj.v1 + obj.v2 + obj.sum, { priority: 5 }),
+      },
+      {
+        after: v => v.sum2,
+      }
+    )
 
     expect(s({ v1: 10, v2: '20' })).toEqual(60)
   })
 
   it('object /w requireAllFields=true', () => {
-    const s = sanitizer.object({
-      name: sanitizer.nonEmptyString(),
-    }, { requireAllFields: true })
+    const s = sanitizer.object(
+      {
+        name: sanitizer.nonEmptyString(),
+      },
+      { requireAllFields: true }
+    )
 
     expect(() => s({ age: 10 })).toThrow()
   })
@@ -261,18 +280,15 @@ describe('sanitizer with high-order function', () => {
 
   it('object /w anyOf(just) should insert succeeded value.', () => {
     const s = sanitizer
-    const listSanitizer = s.object({
-      page: s.anyOf(
-        s.parsePositiveInt(),
-        s.just(1)
-      ),
-      pageSize: s.anyOf(
-        s.parsePositiveInt(),
-        s.just(10)
-      ),
-    }, {
-      requireAllFields: true,
-    })
+    const listSanitizer = s.object(
+      {
+        page: s.anyOf(s.parsePositiveInt(), s.just(1)),
+        pageSize: s.anyOf(s.parsePositiveInt(), s.just(10)),
+      },
+      {
+        requireAllFields: true,
+      }
+    )
 
     expect(listSanitizer({ page: 5 })).toEqual({ page: 5, pageSize: 10 })
   })
@@ -281,8 +297,8 @@ describe('sanitizer with high-order function', () => {
     const s = sanitizer
     const array = s.array(s.parsePositiveInt())
 
-    expect(array([ 1, 2, 3 ])).toEqual([ 1, 2, 3 ])
-    expect(array([ '1', 2, 3 ])).toEqual([ 1, 2, 3 ])
+    expect(array([1, 2, 3])).toEqual([1, 2, 3])
+    expect(array(['1', 2, 3])).toEqual([1, 2, 3])
   })
 
   it('email', () => {
@@ -292,9 +308,12 @@ describe('sanitizer with high-order function', () => {
   })
 
   it('object error propagation', () => {
-    const s = sanitizer.object({
-      id: sanitizer.email({ error: 'id error.' }),
-    }, { version: 2 })
+    const s = sanitizer.object(
+      {
+        id: sanitizer.email({ error: 'id error.' }),
+      },
+      { version: 2 }
+    )
 
     expect(() => s({ id: null })).toThrow('id error.')
   })
@@ -306,11 +325,14 @@ describe('sanitizer with high-order function', () => {
       Rejected: 2,
     }
 
-    const s = sanitizer.object({
-      status: sanitizer.existsInObjectValues(STATUS, { error: 'status error' }),
-    }, {
-      version: 2,
-    })
+    const s = sanitizer.object(
+      {
+        status: sanitizer.existsInObjectValues(STATUS, { error: 'status error' }),
+      },
+      {
+        version: 2,
+      }
+    )
 
     expect(s({ status: 0 })).toEqual({ status: 0 })
     expect(s({ status: 1 })).toEqual({ status: 1 })

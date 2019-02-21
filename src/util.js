@@ -1,6 +1,8 @@
 export const mapObjectValues = (obj, iteratee) => {
   const newObj = {}
-  Object.keys(obj).forEach(k => { newObj[ k ] = iteratee(k, obj[ k ]) })
+  Object.keys(obj).forEach(k => {
+    newObj[k] = iteratee(k, obj[k])
+  })
   return newObj
 }
 
@@ -19,9 +21,9 @@ export const slicedArray = (arr, size, mapper = v => v) => {
  * @param val {string}
  * @returns {string}
  */
-export function maketh (val) {
+export function maketh(val) {
   const num = parseInt(val, 10)
-  if (num <= 0 || isNaN(num)) {
+  if (num <= 0 || Number.isNaN(num)) {
     return val
   }
   switch (val % 10) {
