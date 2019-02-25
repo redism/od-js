@@ -11,5 +11,9 @@
     <orderEntry type="sourceFolder" forTests="false" />
     <orderEntry type="library" name="supertest-DefinitelyTyped" level="application" />
     <orderEntry type="library" name="jest-DefinitelyTyped" level="application" />
+    <orderEntry type="library" name="@types/jest" level="application" />
+    <orderEntry type="library" name="@types/bluebird" level="application" />
+    <orderEntry type="library" name="@types/express" level="application" />
+    <orderEntry type="library" name="@types/supertest" level="application" />
   </component>
 </module>
