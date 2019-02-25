@@ -84,7 +84,11 @@ class SuperAgentWrapper {
     }
 
     const Cls = this.tester.ClsResponseWrapper || TestDataWrapper
-    return noReturn ? null : new Cls(r, r.body)
+    const resp = new Cls(r, r.body)
+    if (this.tester.onResponse) {
+      await this.tester.onResponse(resp)
+    }
+    return noReturn ? null : resp
   }
 
   then(resolve, reject) {
@@ -101,10 +105,11 @@ class SuperAgentWrapper {
       const Cls = this.tester.ClsResponseWrapper || TestDataWrapper
 
       try {
-        if (Cls) {
-          resolve(new Cls(this.response, this.response.body))
+        const resp = new Cls(this.response, this.response.body)
+        if (this.tester.onResponse) {
+          Promise.resolve(this.tester.onResponse(resp)).then(() => resolve(resp), reject)
         } else {
-          resolve(this.response)
+          resolve(resp)
         }
       } catch (ex) {
         reject(ex)
@@ -122,6 +127,7 @@ export class TestAgent {
     this.agent = supertestAgent
     this.mapFilePath = options.mapFilePath || (v => v)
     this.ClsResponseWrapper = options.ClsResponseWrapper // only used when .expect() is not called and awaited.
+    this.onResponse = options.onResponse || null
   }
 
   // eslint-disable-next-line class-methods-use-this,no-unused-vars

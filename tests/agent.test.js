@@ -1,7 +1,8 @@
 import express from 'express'
 import supertest from 'supertest'
-import { BaseServerResponse, FetchNodeAgent, TestAgent } from '../src'
+import { BaseServerResponse, TestAgent } from '../src'
 import { TestDataWrapper } from '../src/agent/tester'
+import { FetchNodeAgent } from '../src/agent/fetcher_node'
 
 class MyAgent {
   constructor(agent) {
@@ -71,14 +72,46 @@ describe('Agents', () => {
       expect(r).toBeInstanceOf(ExchangeRateResponse)
       expect(() => r.rateOf('KRW')).toThrow() // because it is fetched from our server.
     })
+
+    it('onResponse should work for both expect() and then()', async () => {
+      const mock = jest.fn()
+      const agent = new MyAgent(new TestAgent(supertest.agent(app), { onResponse: mock }))
+      const r = await agent.getName()
+      expect(r).toBeInstanceOf(TestDataWrapper)
+      expect(r.res.status).toEqual(200)
+      expect(r.json).toHaveProperty('ok', 1)
+      expect(mock).toHaveBeenCalledTimes(1)
+      expect(mock.mock.calls[0][0]).toBeInstanceOf(TestDataWrapper)
+
+      await agent.getName().expect(200)
+      expect(mock).toHaveBeenCalledTimes(2)
+      expect(mock.mock.calls[1][0]).toBeInstanceOf(TestDataWrapper)
+    })
   })
 
   describe('FetchNodeAgent', () => {
     it('Calling actual APIs (using https://api.exchangeratesapi.io/latest)', async () => {
-      const agent = new MyAgent(new FetchNodeAgent('https://api.exchangeratesapi.io', ExchangeRateResponse))
+      const agent = new MyAgent(
+        new FetchNodeAgent('https://api.exchangeratesapi.io', { ClsResponseWrapper: ExchangeRateResponse })
+      )
       const r = await agent.getExchangeRates()
       expect(r).toBeInstanceOf(ExchangeRateResponse)
       expect(r.rateOf('KRW')).toBeGreaterThan(0)
+    })
+
+    it('onResponse', async () => {
+      const mock = jest.fn()
+      const agent = new MyAgent(
+        new FetchNodeAgent('https://api.exchangeratesapi.io', {
+          ClsResponseWrapper: ExchangeRateResponse,
+          onResponse: mock,
+        })
+      )
+      const r = await agent.getExchangeRates()
+      expect(r).toBeInstanceOf(ExchangeRateResponse)
+      expect(r.rateOf('KRW')).toBeGreaterThan(0)
+      expect(mock).toHaveBeenCalledTimes(1)
+      expect(mock.mock.calls[0][0]).toBeInstanceOf(ExchangeRateResponse)
     })
   })
 })

@@ -9,11 +9,12 @@ import { BaseServerResponse } from './baseResponse'
 export class FetchAgent {
   /**
    * @param serverAddress {string}
-   * @param [ClsResponseWrapper=BaseServerResponse]
+   * @param options {object}
    */
-  constructor(serverAddress, ClsResponseWrapper = BaseServerResponse) {
+  constructor(serverAddress, options = {}) {
     this.serverAddress = serverAddress
-    this.ClsResponseWrapper = ClsResponseWrapper
+    this.ClsResponseWrapper = options.ClsResponseWrapper || BaseServerResponse
+    this.onResponse = options.onResponse || null
   }
 
   // eslint-disable-next-line class-methods-use-this
@@ -37,9 +38,13 @@ export class FetchAgent {
 
     try {
       const json = await response.json()
-      return new this.ClsResponseWrapper(response, json)
+      const resp = new this.ClsResponseWrapper(response, json)
+      this.onResponse ? await this.onResponse(resp) : null
+      return resp
     } catch (ex) {
-      return new this.ClsResponseWrapper(response, null)
+      const resp = new this.ClsResponseWrapper(response, null)
+      this.onResponse ? await this.onResponse(resp) : null
+      return resp
     }
   }
 
